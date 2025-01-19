@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫の位置地図</title>
+    <!-- manifest.json のリンク -->
+<link rel="manifest" href="manifest.json">
+
+<!-- アイコンの指定 -->
+<link rel="icon" href="icon-192x192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icon-512x512.png" sizes="512x512" type="image/png">
+
+<!-- サービスワーカーの登録 -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => {
+            console.log('Service Worker の登録成功:', registration.scope);
+        })
+        .catch((error) => {
+            console.error('Service Worker の登録失敗:', error);
+        });
+    }
+</script>
+
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAP_KEY'] %>&callback=initMap" async defer></script>
+
+</head>
+<body>
+    <h1>猫の位置を地図で表示</h1>
+    <div id="map"></div>
+    <div class="button-container">
+        <button onclick="location.href='index.html'">index.html</button>
+    <script>
+        function initMap() {
+            // 地図の初期位置 (郡山市)
+            const center = { lat: 37.388288, lng: 140.404326 };
+
+            // 地図を表示
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 9,
+                center: center,
+            });
+
+            // ローカルストレージから猫の情報を取得
+            const cats = JSON.parse(localStorage.getItem('cats')) || [];
+
+            // 各猫の位置にマーカーを追加
+            cats.forEach(cat => {
+                const lat = parseFloat(cat.latitude);
+                const lng = parseFloat(cat.longitude);
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const marker = new google.maps.Marker({
+                        position: { lat, lng },
+                        map: map,
+                        title: cat.catName,
+                    });
+
+                    // マーカーに情報ウィンドウを追加
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div>
+                                <h3>${cat.catName}</h3>
+                                <p><strong>健康状態:</strong> ${cat.healthStatus}</p>
+                                <p><strong>手術状況:</strong> ${cat.surgeryStatus}</p>
+                                <p><strong>特徴:</strong> ${cat.features}</p>
+                                <img src="${cat.catImage}" alt="${cat.catName}" style="max-width: 150px; border-radius: 8px;">
+                            </div>
+                        `,
+                    });
+
+                    marker.addListener("click", () => {
+                        infoWindow.open(map, marker);
+                    });
+                }
+            });
+        }
+
+        // 地図を初期化
+        window.onload = initMap;
+    </script>
+</body>
+</html>

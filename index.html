@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫の情報一覧</title>
+    <!-- manifest.json のリンク -->
+<link rel="manifest" href="manifest.json">
+
+<!-- アイコンの指定 -->
+<link rel="icon" href="icon-192x192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icon-512x512.png" sizes="512x512" type="image/png">
+
+<!-- サービスワーカーの登録 -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => {
+            console.log('Service Worker の登録成功:', registration.scope);
+        })
+        .catch((error) => {
+            console.error('Service Worker の登録失敗:', error);
+        });
+    }
+</script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        h1 {
+            color: #ff5733;
+        }
+        .cat-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .cat-card img {
+            max-width: 150px;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+        .cat-card div {
+            margin-bottom: 8px;
+        }
+        .cat-card button {
+            background-color: #ff5733;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .cat-card button:hover {
+            background-color: #e14e2b;
+        }
+    </style>
+</head>
+<body>
+    <h1>猫の情報一覧</h1>
+    <div id="catList"></div>
+    <div class="button-container">
+        <button onclick="location.href='form.html'">form.html</button>
+        <div class="button-container">
+            <button onclick="location.href='map.html'">map.html</button>
+    <script>
+        // 猫の情報を表示
+        const catList = document.getElementById('catList');
+        const cats = JSON.parse(localStorage.getItem('cats')) || [];
+
+        if (cats.length === 0) {
+            catList.innerHTML = '<p>登録された猫の情報はありません。</p>';
+        } else {
+            cats.forEach((cat, index) => {
+                // カードを作成
+                const catCard = document.createElement('div');
+                catCard.className = 'cat-card';
+
+                // 猫の情報を追加
+                catCard.innerHTML = `
+                    <img src="${cat.catImage}" alt="${cat.catName}" />
+                    <div><strong>名前:</strong> ${cat.catName}</div>
+                    <div><strong>健康状態:</strong> ${cat.healthStatus}</div>
+                    <div><strong>手術状況:</strong> ${cat.surgeryStatus}</div>
+                    <div><strong>特徴:</strong> ${cat.features}</div>
+                    <div><strong>緯度:</strong> ${cat.latitude}</div>
+                    <div><strong>経度:</strong> ${cat.longitude}</div>
+                    <div><strong>前回の餌やり時間:</strong> <span id="feedTime-${index}">なし</span></div>
+                    <button onclick="feedCat(${index})">餌やりボタン</button>
+                `;
+
+                // カードをリストに追加
+                catList.appendChild(catCard);
+            });
+        }
+
+        // 餌やりボタンの処理
+        function feedCat(index) {
+            const feedTimeSpan = document.getElementById(`feedTime-${index}`);
+            const currentTime = new Date().toLocaleString();
+            feedTimeSpan.textContent = currentTime;
+
+            // 餌やり時間をlocalStorageに保存
+            cats[index].lastFed = currentTime;
+            localStorage.setItem('cats', JSON.stringify(cats));
+        }
+
+        // 前回の餌やり時間をロード
+        window.onload = () => {
+            cats.forEach((cat, index) => {
+                if (cat.lastFed) {
+                    document.getElementById(`feedTime-${index}`).textContent = cat.lastFed;
+                }
+            });
+        };
+    </script>
+</body>
+</html>

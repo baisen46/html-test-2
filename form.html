@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猫の情報登録</title>
+</head>
+<body>
+    <form id="catForm">
+        <h1>猫を登録する</h1>
+        
+        <label for="catName">猫の名前</label>
+        <input type="text" id="catName" name="catName" required>
+        
+        <label for="healthStatus">健康状態</label>
+        <select id="healthStatus" name="healthStatus" required>
+            <option value="良好">良好</option>
+            <option value="注意">注意</option>
+            <option value="要注意">要注意</option>
+        </select>
+        
+        <label for="surgeryStatus">手術状況</label>
+        <select id="surgeryStatus" name="surgeryStatus" required>
+            <option value="済み">済み</option>
+            <option value="未">未</option>
+        </select>
+        
+        <label for="features">特徴</label>
+        <textarea id="features" name="features" maxlength="100" required></textarea>
+        
+        <label for="catImage">顔の画像</label>
+        <input type="file" id="catImage" name="catImage" accept="image/*" required>
+
+        <label for="latitude">緯度</label>
+        <input type="text" id="latitude" name="latitude" placeholder="緯度を入力" required>
+
+        <label for="longitude">経度</label>
+        <input type="text" id="longitude" name="longitude" placeholder="経度を入力" required>
+        
+        <button type="button" id="getLocation">現在地を取得</button>
+        
+        <button type="submit">登録</button>
+    </form>
+    <div class="button-container">
+        <button onclick="location.href='index.html'">index.html</button>
+    <script>
+        // 現在地を取得するボタンの処理
+document.getElementById('getLocation').addEventListener('click', () => {
+    if (navigator.geolocation) {
+        // ボタンをクリックしたときに位置情報を取得
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // 緯度と経度を取得してフォームに反映
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                alert('現在地を取得しました！');
+            },
+            (error) => {
+                // エラーハンドリング
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        alert('位置情報の取得が拒否されました。');
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        alert('位置情報が利用できません。');
+                        break;
+                    case error.TIMEOUT:
+                        alert('位置情報の取得がタイムアウトしました。');
+                        break;
+                    default:
+                        alert('位置情報の取得中にエラーが発生しました。');
+                }
+            }
+        );
+    } else {
+        // Geolocation API がサポートされていない場合
+        alert('このブラウザでは位置情報がサポートされていません。');
+    }
+});
+
+        // フォームの登録処理
+        document.getElementById('catForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+    
+            const fileInput = document.getElementById('catImage');
+            const reader = new FileReader();
+    
+            // ファイル読み込み完了後に処理を実行
+            reader.onload = () => {
+                const cat = {
+                    catName: document.getElementById('catName').value,
+                    healthStatus: document.getElementById('healthStatus').value,
+                    surgeryStatus: document.getElementById('surgeryStatus').value,
+                    features: document.getElementById('features').value,
+                    catImage: reader.result, // Base64形式で画像を保存
+                    latitude: document.getElementById('latitude').value,
+                    longitude: document.getElementById('longitude').value,
+                };
+    
+                // ローカルストレージから既存の猫リストを取得
+                let cats = JSON.parse(localStorage.getItem('cats')) || [];
+                cats.push(cat); // 新しい猫をリストに追加
+    
+                // ローカルストレージに保存
+                localStorage.setItem('cats', JSON.stringify(cats));
+    
+                alert('猫の情報を登録しました！');
+                document.getElementById('catForm').reset();
+            };
+    
+            // ファイル読み込み
+            if (fileInput.files[0]) {
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                alert("画像を選択してください！");
+            }
+        });
+    </script>
+    
+</body>
+</html>
