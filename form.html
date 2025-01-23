@@ -3,119 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>猫の情報登録</title>
+    <title>猫の位置地図</title>
+    <!-- manifest.json のリンク -->
+<link rel="manifest" href="manifest.json">
+
+<!-- アイコンの指定 -->
+<link rel="icon" href="icon-192x192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icon-512x512.png" sizes="512x512" type="image/png">
+
+<!-- サービスワーカーの登録 -->
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+        .then((registration) => {
+            console.log('Service Worker の登録成功:', registration.scope);
+        })
+        .catch((error) => {
+            console.error('Service Worker の登録失敗:', error);
+        });
+    }
+</script>
+
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+    <script src="https://script.google.com/macros/s/AKfycbwy8lkSqEK4qV2dXHxZVUraAs1vrfFcpIDZpKD7TnpzsTEdVnnUvKsW97woLhxU480p/exec" async defer></script>
+
 </head>
 <body>
-    <form id="catForm">
-        <h1>猫を登録する</h1>
-        
-        <label for="catName">猫の名前</label>
-        <input type="text" id="catName" name="catName" required>
-        
-        <label for="healthStatus">健康状態</label>
-        <select id="healthStatus" name="healthStatus" required>
-            <option value="良好">良好</option>
-            <option value="注意">注意</option>
-            <option value="要注意">要注意</option>
-        </select>
-        
-        <label for="surgeryStatus">手術状況</label>
-        <select id="surgeryStatus" name="surgeryStatus" required>
-            <option value="済み">済み</option>
-            <option value="未">未</option>
-        </select>
-        
-        <label for="features">特徴</label>
-        <textarea id="features" name="features" maxlength="100" required></textarea>
-        
-        <label for="catImage">顔の画像</label>
-        <input type="file" id="catImage" name="catImage" accept="image/*" required>
-
-        <label for="latitude">緯度</label>
-        <input type="text" id="latitude" name="latitude" placeholder="緯度を入力" required>
-
-        <label for="longitude">経度</label>
-        <input type="text" id="longitude" name="longitude" placeholder="経度を入力" required>
-        
-        <button type="button" id="getLocation">現在地を取得</button>
-        
-        <button type="submit">登録</button>
-    </form>
+    <h1>猫の位置を地図で表示</h1>
+    <div id="map"></div>
     <div class="button-container">
         <button onclick="location.href='index.html'">index.html</button>
     <script>
-        // 現在地を取得するボタンの処理
-document.getElementById('getLocation').addEventListener('click', () => {
-    if (navigator.geolocation) {
-        // ボタンをクリックしたときに位置情報を取得
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                // 緯度と経度を取得してフォームに反映
-                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
-                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
-                alert('現在地を取得しました！');
-            },
-            (error) => {
-                // エラーハンドリング
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        alert('位置情報の取得が拒否されました。');
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        alert('位置情報が利用できません。');
-                        break;
-                    case error.TIMEOUT:
-                        alert('位置情報の取得がタイムアウトしました。');
-                        break;
-                    default:
-                        alert('位置情報の取得中にエラーが発生しました。');
-                }
-            }
-        );
-    } else {
-        // Geolocation API がサポートされていない場合
-        alert('このブラウザでは位置情報がサポートされていません。');
-    }
-});
+        function initMap() {
+            // 地図の初期位置 (郡山市)
+            const center = { lat: 37.388288, lng: 140.404326 };
 
-        // フォームの登録処理
-        document.getElementById('catForm').addEventListener('submit', (event) => {
-            event.preventDefault();
-    
-            const fileInput = document.getElementById('catImage');
-            const reader = new FileReader();
-    
-            // ファイル読み込み完了後に処理を実行
-            reader.onload = () => {
-                const cat = {
-                    catName: document.getElementById('catName').value,
-                    healthStatus: document.getElementById('healthStatus').value,
-                    surgeryStatus: document.getElementById('surgeryStatus').value,
-                    features: document.getElementById('features').value,
-                    catImage: reader.result, // Base64形式で画像を保存
-                    latitude: document.getElementById('latitude').value,
-                    longitude: document.getElementById('longitude').value,
-                };
-    
-                // ローカルストレージから既存の猫リストを取得
-                let cats = JSON.parse(localStorage.getItem('cats')) || [];
-                cats.push(cat); // 新しい猫をリストに追加
-    
-                // ローカルストレージに保存
-                localStorage.setItem('cats', JSON.stringify(cats));
-    
-                alert('猫の情報を登録しました！');
-                document.getElementById('catForm').reset();
-            };
-    
-            // ファイル読み込み
-            if (fileInput.files[0]) {
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
-                alert("画像を選択してください！");
-            }
-        });
+            // 地図を表示
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 9,
+                center: center,
+            });
+
+            // ローカルストレージから猫の情報を取得
+            const cats = JSON.parse(localStorage.getItem('cats')) || [];
+
+            // 各猫の位置にマーカーを追加
+            cats.forEach(cat => {
+                const lat = parseFloat(cat.latitude);
+                const lng = parseFloat(cat.longitude);
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const marker = new google.maps.Marker({
+                        position: { lat, lng },
+                        map: map,
+                        title: cat.catName,
+                    });
+
+                    // マーカーに情報ウィンドウを追加
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div>
+                                <h3>${cat.catName}</h3>
+                                <p><strong>健康状態:</strong> ${cat.healthStatus}</p>
+                                <p><strong>手術状況:</strong> ${cat.surgeryStatus}</p>
+                                <p><strong>特徴:</strong> ${cat.features}</p>
+                                <img src="${cat.catImage}" alt="${cat.catName}" style="max-width: 150px; border-radius: 8px;">
+                            </div>
+                        `,
+                    });
+
+                    marker.addListener("click", () => {
+                        infoWindow.open(map, marker);
+                    });
+                }
+            });
+        }
+
+        // 地図を初期化
+        window.onload = initMap;
     </script>
-    
 </body>
 </html>
